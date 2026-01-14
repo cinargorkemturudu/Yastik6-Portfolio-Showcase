@@ -111,35 +111,10 @@ At no point does the backend infer or store user ownership.
 ## Current State of the Project
 
 - Architecture is actively being refined
-- Folder organization is under revision
-- Implementation is intentionally paused
 - Public code is withheld until structure stabilizes
 
 This is a deliberate choice.
 
----
-
-## Why the Folder Structure Is Being Reworked
-
-The current organization showed issues with:
-- Separation of concerns
-- Testability
-- Long-term maintainability
-- Clear domain boundaries
-
-Rather than iterating on a flawed structure, the system is being redesigned at the architectural level first.
-
----
-
-## Proposed Folder Structure (Target, Not Final)
-- **ui**: Widgets and presentation logic
-- **application**: Use cases and orchestration
-- **domain**: Core business models and rules
-- **data/local**: SQLite access
-- **data/remote**: Price API access
-- **infrastructure**: Platform-specific wiring
-
-This structure is a direction, not a promise.
 
 ---
 
