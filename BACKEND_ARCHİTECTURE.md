@@ -11,60 +11,8 @@ The Yastık6 backend is engineered not as a traditional CRUD REST API, but as a 
 
 ## 2. API Component Architecture (C4 Level 3)
 
-```mermaid
-flowchart LR
-    %% Custom C4 Styles
-    classDef boundary fill:none,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
-    classDef controller fill:#d4c5f9,stroke:#5a3ba0,stroke-width:2px,color:#000
-    classDef core fill:#b8e0d2,stroke:#2d7a5d,stroke-width:2px,color:#000
-    classDef worker fill:#fff2cc,stroke:#d6b656,stroke-width:2px,color:#000
-    classDef external fill:#e1e1e1,stroke:#666,stroke-width:2px,color:#000
-    classDef database fill:#f9d5e5,stroke:#a63d67,stroke-width:2px,shape:cylinder,color:#000
 
-    Client["Yastık6 Mobile Client"]:::external
-
-    subgraph Entry ["API Gateway"]
-        direction TB
-        API["REST Controllers"]:::controller
-    end
-
-    subgraph Workers ["The Engine Room (Background Services)"]
-        direction TB
-        Refresher["PriceSnapshotRefresher<br/>(Live Traffic Police)"]:::worker
-        Warmer["HistoryCacheWarmer<br/>(Ghost Worker)"]:::worker
-    end
-
-    subgraph Pipeline ["Normalization & Security Pipeline"]
-        direction TB
-        Providers["IPriceProvider<br/>(Binance, Harem, FreeCurrency)"]:::core
-        Processor["PriceProcessor<br/>(BFF Conversion & Math)"]:::core
-        Shield["PriceShieldValidator<br/>(Anomaly Detection)"]:::core
-        Service["PriceService<br/>(LOCF Math & Orchestration)"]:::core
-    end
-
-    subgraph Persistence ["Data Stores & Infrastructure"]
-        direction TB
-        RAM["PriceSnapshotStore<br/>(Singleton O(1) Cache)"]:::database
-        DB[("SQLite AppDbContext<br/>(Time-Series History)")]:::database
-        Alerts["TelegramAlertService<br/>(Infrastructure Watchdog)"]:::external
-    end
-
-    %% Flow of Background Workers
-    Workers -->|"Triggers"| Providers
-    Providers -->|"Raw Volatile JSON"| Processor
-    Processor -->|"Normalized Entities"| Shield
-    Shield -->|"Writes Validated Tick"| RAM
-    Shield -->|"Writes Tick History"| DB
-    Shield -.->|"Fires Anomaly Alert"| Alerts
-    Refresher -.->|"Triggers Switch on Crash"| Alerts
-
-    %% Flow of Client Requests
-    Client -->|"Polls Data"| API
-    API -->|"Fetches Live"| RAM
-    API -->|"Requests Chart"| Service
-    Service -->|"Thundering Herd Lock"| DB
-    Warmer -->|"Pre-computes Charts"| Service
-```
+<img src="docs/Backend Architecture Diagram.png" alt="Yastık6 Backend Architecture">
 
 ---
 
