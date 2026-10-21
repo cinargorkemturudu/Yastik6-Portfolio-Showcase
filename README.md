@@ -4,7 +4,7 @@
 ## 1. Executive Summary
 Yastık6 is a privacy-first, local-first personal finance system engineered for absolute data sovereignty. Unlike conventional finance apps that centralize user portfolios, Yastık6 localizes all sensitive data within the device’s "Local-First Fortress." Our backend operates as a **stateless BFF (Backend-For-Frontend) pipeline**, offloading complex market data normalization and historical computations from the client. This strategy preserves client-side resources—ensuring fluid performance on constrained devices—while transforming volatile external data into **immutable domain entities**. Our client-side logic performs deterministic PnL calculations on this normalized stream, ensuring total financial accuracy without ever exposing user state to the server.
 
-> **▶ Watch the Architecture in Action:** [Link to 60-Second Video Demo / Loom]
+> **▶ Watch the 2.5-minute demo:** [Yastık6 – Portfolio tracker demo](https://youtu.be/JhnMPA0rF7U)
 
 ## 2. System Architecture (C4 Level 2)
 
