@@ -7,7 +7,7 @@
 
 ## 1. Executive Summary
 
-The Yastık6 backend is engineered not as a traditional CRUD REST API, but as a highly resilient, stateless **Backend-For-Frontend (BFF) normalization pipeline**. Its primary directive is to insulate the client-side local fortress from the extreme volatility of external financial markets. By utilizing preemptive RAM caching, deterministic algorithms (LOCF), and active anomaly blocking, the backend guarantees high-throughput O(1) response times while remaining entirely unburdened by client state or user identity.
+The Yastık6 backend is engineered not as a traditional CRUD REST API, but as a highly resilient, stateless **Backend-For-Frontend (BFF) normalization pipeline**. Its primary directive is to insulate the client-side local fortress from the extreme volatility of external financial markets. By utilizing preemptive RAM caching, deterministic algorithms (LOCF), and active anomaly blocking, the backend serves every market request straight from memory while remaining entirely unburdened by client state or user identity.
 
 ## 2. API Component Architecture (C4 Level 3)
 
@@ -20,9 +20,9 @@ The Yastık6 backend is engineered not as a traditional CRUD REST API, but as a 
 
 To ensure zero-latency client responses, external data fetching is strictly decoupled from client HTTP requests.
 
-*   **`PriceSnapshotRefresher` (The Traffic Police):** An infinite loop running on a background thread that continuously polls primary providers (Harem, Binance, FreeCurrency). It acts as the system's active heartbeat.
-    *   **Smart Fallback Switch:** If a primary provider crashes, the Refresher automatically routes traffic to the bench (e.g., `BinanceClient` -> `YahooCryptoClient`). 
-    *   **DDoS Quarantine:** If a provider fails completely, the loop imposes a strict 5-minute quarantine penalty (`Task.Delay(TimeSpan.FromMinutes(5))`) to prevent resource exhaustion and upstream API bans.
+*   **`PriceSnapshotRefresher` (The Traffic Police):** A background service that runs one polling loop per primary provider (Harem, Binance, FreeCurrency, Yahoo BIST), each on its own refresh interval. It acts as the system's active heartbeat.
+    *   **Smart Fallback Switch:** If a primary provider still fails after its retries (Polly, exponential backoff), the Refresher immediately fetches from a backup instead (`FreeCurrencyClient` -> `YahooForexClient`, `BinanceClient` -> `YahooCryptoClient`) and sends a Telegram alert.
+    *   **Crash Backoff & Recovery:** The crashed loop then waits 5 minutes (`CrashBackoff`) before trying the primary again, so a failing vendor isn't hammered into banning us. When the primary succeeds again, the Refresher logs how long the outage lasted and sends a "Provider Recovered" alert.
 *   **`HistoryCacheWarmer` (The Ghost Worker):** A background daemon that pre-computes dense chart datasets (Day, Week, Month, Year). It stages these massive queries into RAM before the user ever opens the application, ensuring heavy SQLite aggregations never block the main thread.
 
 ---
@@ -35,6 +35,7 @@ All external data is treated as hostile and untrusted. Before updating the immut
 *   **`PriceShieldValidator`:** The ultimate gatekeeper against upstream data corruption.
     *   **Shield 1 (Zero-Price):** Rejects payload instantly if Ask/Bid is `<= 0`.
     *   **Shield 2 (Flash Crash):** Rejects payload if the instant deviation exceeds `40%`.
+    *   **Re-anchoring:** A real move larger than 40% must not freeze a symbol forever. When three consecutive readings agree within 5% on the new level, the shield accepts it and sends a "re-anchored" alert.
     *   **Smart Muting:** Uses an `AlertTracker` cache key to prevent Telegram alert spam, muting identical errors for 1 hour while the system silently falls back to the last known valid price.
 
 ---
@@ -45,5 +46,5 @@ All external data is treated as hostile and untrusted. Before updating the immut
 Located within the `PriceService`, the charting engine handles sparse time-series data using a strict mathematical fill-forward approach. To prevent "time-travel" data corruption, the algorithm requires an absolute historical anchor. If a price point is unknown in the past, the timeline remains mathematically sparse until a true data point is intercepted, strictly preventing the projection of future data into historical gaps.
 
 ### Concurrency Protection (Thundering Herd Prevention)
-If the `HistoryCacheWarmer` misses a cache hit and 5,000 users simultaneously request a 1-year chart, it would execute 5,000 identical heavy SQLite queries, crashing the container. The `PriceService` implements a strict `SemaphoreSlim(1, 1)` lock. 
-*   **Execution:** Only the very first request is allowed to hit the database. All concurrent requests wait at the lock. Once the first request completes and populates the RAM cache, the lock releases, and all waiting requests are instantly served the exact same memory pointer, neutralizing the Thundering Herd phenomenon.
+If a chart is missing from the cache and many clients request it at the same moment, each request would run the same heavy SQLite query. The `PriceService` prevents this with a `SemaphoreSlim(1, 1)` lock. 
+*   **Execution:** Only the very first request is allowed to hit the database. All concurrent requests wait at the lock. Once the first request completes and populates the RAM cache, the lock releases and the waiting requests are served from that cache entry instead of querying again, which prevents a thundering herd.
