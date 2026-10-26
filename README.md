@@ -10,13 +10,29 @@ I designed and built both sides on my own: a Flutter app and an ASP.NET Core (.N
 >
 > The source repositories are private. I'm happy to walk through the code live or grant read access on request.
 
+### 🟢 Try the live API (no key, no sign-up)
+The production backend has a public, read-only tier so you can poke at the real system:
+
+| | |
+|---|---|
+| **Interactive docs (Swagger)** | **[yastik6.net/api/public/docs](https://yastik6.net/api/public/docs)** · click an endpoint → *Try it out* → *Execute* |
+| Live prices, 1,000+ assets | [`/api/public/market`](https://yastik6.net/api/public/market) |
+| Gram gold, last 7 days | [`/api/public/history/GRAM_ALTIN?range=Week`](https://yastik6.net/api/public/history/GRAM_ALTIN?range=Week) |
+| Endpoint list + all product codes | [`/api/public`](https://yastik6.net/api/public) |
+
+```bash
+curl -s https://yastik6.net/api/public/market | jq '.items[] | select(.productCode=="GRAM_ALTIN")'
+```
+
+Rate limited to 30 requests/min per IP (HTTP 429 with `Retry-After` beyond that). It serves the same in-memory snapshot the mobile app reads, so what you see is production. Prices come from third-party providers and may be delayed: demo use only, not for trading.
+
 ### By the numbers
 | | |
 |---|---|
 | Production, 7-day window (Oct 2026) | **0** errors · **32,540** successful price fetches · **93** unauthorized requests blocked |
 | Price history retention | **6.09M → 356k rows** (~94% smaller) after downsampling old data |
 | Market data providers | **6** (Harem, Binance, FreeCurrency + Yahoo Forex / Crypto / BIST), 2 of them automatic fallbacks |
-| Automated tests | **46** backend (xUnit) · **40** frontend (flutter_test) |
+| Automated tests | **74** backend (xUnit, incl. in-memory API pipeline tests) · **40** frontend (flutter_test) |
 
 ## 2. System Architecture (C4 Level 2)
 

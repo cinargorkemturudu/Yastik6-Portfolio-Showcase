@@ -38,6 +38,17 @@ All external data is treated as hostile and untrusted. Before updating the immut
     *   **Re-anchoring:** A real move larger than 40% must not freeze a symbol forever. When three consecutive readings agree within 5% on the new level, the shield accepts it and sends a "re-anchored" alert.
     *   **Smart Muting:** Uses an `AlertTracker` cache key to prevent Telegram alert spam, muting identical errors for 1 hour while the system silently falls back to the last known valid price.
 
+### Public Demo Tier (`/api/public/*`)
+
+A keyless, read-only slice of the API for anyone evaluating the project, isolated from the mobile app's traffic:
+
+*   **Same data, no copy:** `PublicPricesController` reads the same in-memory snapshot and history service as the app. History is capped at Day/Week/Month (pre-warmed in memory), and unknown product codes are rejected from the snapshot before any database work. That matters because a history cache miss takes a lock shared with the app's own requests.
+*   **Two rate limits stacked, sized to a budget:** 30 req/min per visitor, plus a 120 req/min ceiling shared by *all* visitors. The ceiling is sized from bandwidth: at ~380 KB per uncompressed market response, a sustained flood tops out around 2 TB/month of egress. It runs as the global limiter, so it covers the Swagger page's static files too. IPv6 visitors are bucketed per /64 so address rotation doesn't help. Rejections return `429` with `Retry-After`. Mobile app traffic has its own policy and is never counted.
+*   **Quiet under attack:** rejected public requests are logged at Debug, so a flood can't fill Seq or the disk; hitting the shared ceiling sends one Telegram alert per hour instead. A config kill switch (`PublicApi__Enabled=false`) removes the whole tier without a code change.
+*   **Real client IP behind Cloudflare:** Production runs Cloudflare → nginx → Kestrel, so the TCP peer is a Cloudflare edge IP shared by many visitors. The limiter partitions on `CF-Connecting-IP` instead.
+*   **Separate OpenAPI document:** Swagger generates a second document containing only the public routes, served at `/api/public/docs` (nginx forwards only `/api/*`). The private document and the key header never appear there.
+*   **Tested end-to-end:** `WebApplicationFactory` boots the real middleware pipeline in memory and asserts the key gate, both limits, IPv6 bucketing, the kill switch, `Retry-After`, and that the public document leaks no private routes.
+
 ---
 
 ## 5. Algorithmic Integrity & Concurrency
