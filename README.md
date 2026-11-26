@@ -8,7 +8,7 @@ I designed and built both sides on my own: a Flutter app and an ASP.NET Core (.N
 
 > **▶ Watch the 2.5-minute demo:** [Yastık6 – Portfolio tracker demo](https://youtu.be/JhnMPA0rF7U)
 >
-> **Source code:** [Backend (ASP.NET Core, .NET 10)](https://github.com/cinargorkemturudu/Isolated-Backend-Yastik6) · [Flutter app](https://github.com/cinargorkemturudu/Yastik6-Frontend)
+> **Source code:** [Backend (ASP.NET Core, .NET 10)](https://github.com/cinargorkemturudu/yastik6-backend) · [Flutter app](https://github.com/cinargorkemturudu/yastik6-app)
 
 ### 🟢 Try the live API (no key, no sign-up)
 The production backend has a public, read-only tier so you can poke at the real system:
