@@ -2,7 +2,7 @@
 **Status:** Architectural Design & Systems Thinking Showcase
 
 ## 1. Executive Summary
-Yastık6 ("yastık altı": savings kept under the pillow) is a privacy-first, local-first portfolio tracker for gold, currencies, stocks and crypto, built for Turkey. There are no user accounts: the portfolio lives in a SQLite database on the user's phone, and the backend never learns what anyone owns. The .NET backend is a **stateless BFF (Backend-For-Frontend) pipeline** that fetches six volatile market feeds, validates and normalizes them, and serves one identical price list to every client from memory. All profit/loss math runs on the device in exact decimal arithmetic.
+Yastık6 ("yastık altı": savings kept under the pillow) is a privacy-first, local-first portfolio tracker for gold, currencies, stocks and crypto, built for Turkey. There are no user accounts: the portfolio lives in a SQLite database on the user's phone, and the backend never learns what anyone owns. The .NET backend is a **stateless BFF (Backend-For-Frontend) pipeline** that fetches volatile market data from four sources (gold, crypto, stocks, FX), validates and normalizes them, and serves one identical price list to every client from memory. All profit/loss math runs on the device in exact decimal arithmetic.
 
 I designed and built both sides on my own: a Flutter app and an ASP.NET Core (.NET 10) backend running in production with CI/CD, structured logging and Telegram alerting.
 
